@@ -86,8 +86,8 @@ class AStar {
             const cell = this.grid.getCellElement(currentNode);
             cell.classList.add('path');
             
-            // Visualization delay - make it faster than visiting
-            await new Promise(resolve => setTimeout(resolve, 2));
+            // Visualization delay
+            await new Promise(resolve => setTimeout(resolve, 50));
         }
     }
 } 

@@ -12,10 +12,6 @@ class PathfindingVisualizer {
         this.dijkstra = new Dijkstra(this.dijkstraGrid);
         this.astar = new AStar(this.astarGrid);
 
-        // Set initial placement mode and button state
-        this.setPlacementMode('start');
-        document.getElementById('placeStart').classList.add('selected');
-
         this.setupEventListeners();
     }
 
@@ -29,9 +25,9 @@ class PathfindingVisualizer {
         // Speed control
         document.getElementById('speed').addEventListener('change', (e) => {
             const speedMap = {
-                'slow': 50,
-                'medium': 20,
-                'fast': 5
+                'slow': 100,
+                'medium': 50,
+                'fast': 20
             };
             this.speed = speedMap[e.target.value];
         });
@@ -49,58 +45,73 @@ class PathfindingVisualizer {
             this.setPlacementMode('wall');
         });
 
+        document.getElementById('erase').addEventListener('click', () => {
+            this.setPlacementMode('erase');
+        });
+
         // Find path button
         document.getElementById('findPath').addEventListener('click', () => {
             if (this.isRunning) return;
             this.findPath();
         });
 
-        // Clear walls button
-        document.getElementById('clearWalls').addEventListener('click', () => {
-            this.dijkstraGrid.clearWalls();
-            this.astarGrid.clearWalls();
+        // Clear grid button
+        document.getElementById('clearGrid').addEventListener('click', () => {
+            this.dijkstraGrid.clearWallsOnly();
+            this.astarGrid.clearWallsOnly();
+        });
+
+        // Random Walls button
+        document.getElementById('randomWalls').addEventListener('click', () => {
+            // Use a random integer seed for both grids
+            const seed = Math.floor(Math.random() * 2147483647);
+            this.dijkstraGrid.setRandomWalls(0.25, seed);
+            this.astarGrid.setRandomWalls(0.25, seed);
         });
 
         // Synchronize interactions between grids
         this.dijkstraGrid.container.addEventListener('mousedown', (e) => {
             if (!e.target.classList.contains('grid-cell')) return;
-            const row = parseInt(e.target.dataset.row);
-            const col = parseInt(e.target.dataset.col);
             if (this.isRunning) {
                 this.dijkstra.cancelRequested = true;
                 this.astar.cancelRequested = true;
                 this.dijkstraGrid.clearPath();
                 this.astarGrid.clearPath();
                 this.isRunning = false;
-                if (this.dijkstraGrid.placementMode === 'start') {
-                    this.dijkstraGrid.setStartNode(this.dijkstraGrid.grid[row][col]);
-                    this.astarGrid.setStartNode(this.astarGrid.grid[row][col]);
-                } else if (this.dijkstraGrid.placementMode === 'end') {
-                    this.dijkstraGrid.setEndNode(this.dijkstraGrid.grid[row][col]);
-                    this.astarGrid.setEndNode(this.astarGrid.grid[row][col]);
-                }
+                return;
             }
+            const row = parseInt(e.target.dataset.row);
+            const col = parseInt(e.target.dataset.col);
             this.handleGridInteraction(this.dijkstraGrid, row, col);
         });
 
         this.astarGrid.container.addEventListener('mousedown', (e) => {
             if (!e.target.classList.contains('grid-cell')) return;
-            const row = parseInt(e.target.dataset.row);
-            const col = parseInt(e.target.dataset.col);
             if (this.isRunning) {
                 this.dijkstra.cancelRequested = true;
                 this.astar.cancelRequested = true;
                 this.dijkstraGrid.clearPath();
                 this.astarGrid.clearPath();
                 this.isRunning = false;
-                if (this.astarGrid.placementMode === 'start') {
-                    this.dijkstraGrid.setStartNode(this.dijkstraGrid.grid[row][col]);
-                    this.astarGrid.setStartNode(this.astarGrid.grid[row][col]);
-                } else if (this.astarGrid.placementMode === 'end') {
-                    this.dijkstraGrid.setEndNode(this.dijkstraGrid.grid[row][col]);
-                    this.astarGrid.setEndNode(this.astarGrid.grid[row][col]);
-                }
+                return;
             }
+            const row = parseInt(e.target.dataset.row);
+            const col = parseInt(e.target.dataset.col);
+            this.handleGridInteraction(this.astarGrid, row, col);
+        });
+
+        // Synchronize mouseover events
+        this.dijkstraGrid.container.addEventListener('mouseover', (e) => {
+            if (!this.dijkstraGrid.isMouseDown || !e.target.classList.contains('grid-cell')) return;
+            const row = parseInt(e.target.dataset.row);
+            const col = parseInt(e.target.dataset.col);
+            this.handleGridInteraction(this.dijkstraGrid, row, col);
+        });
+
+        this.astarGrid.container.addEventListener('mouseover', (e) => {
+            if (!this.astarGrid.isMouseDown || !e.target.classList.contains('grid-cell')) return;
+            const row = parseInt(e.target.dataset.row);
+            const col = parseInt(e.target.dataset.col);
             this.handleGridInteraction(this.astarGrid, row, col);
         });
 
@@ -115,7 +126,8 @@ class PathfindingVisualizer {
         const buttons = [
             document.getElementById('placeStart'),
             document.getElementById('placeEnd'),
-            document.getElementById('placeWall')
+            document.getElementById('placeWall'),
+            document.getElementById('erase')
         ];
         buttons.forEach(btn => btn.classList.remove('selected'));
         switch (mode) {
@@ -127,6 +139,9 @@ class PathfindingVisualizer {
                 break;
             case 'wall':
                 document.getElementById('placeWall').classList.add('selected');
+                break;
+            case 'erase':
+                document.getElementById('erase').classList.add('selected');
                 break;
         }
     }
@@ -146,6 +161,9 @@ class PathfindingVisualizer {
                 break;
             case 'wall':
                 grid.toggleWall(node);
+                break;
+            case 'erase':
+                grid.eraseNode(node);
                 break;
         }
 
@@ -195,9 +213,6 @@ class PathfindingVisualizer {
     }
 
     resetGrids() {
-        // Store current placement mode
-        const currentMode = this.dijkstraGrid.placementMode;
-
         // Clear existing grids
         this.dijkstraGrid.container.innerHTML = '';
         this.astarGrid.container.innerHTML = '';
@@ -212,29 +227,10 @@ class PathfindingVisualizer {
 
         // Reattach event listeners
         this.setupEventListeners();
-
-        // Restore placement mode
-        this.setPlacementMode(currentMode);
     }
 }
 
 // Initialize the visualizer when the page loads
 window.addEventListener('load', () => {
-    const visualizer = new PathfindingVisualizer();
-    
-    // Set initial grid size to 15x15
-    document.getElementById('gridSize').value = '15';
-    visualizer.gridSize = 15;
-    visualizer.resetGrids();
-    
-    // After a short delay, change to 10x10
-    setTimeout(() => {
-        document.getElementById('gridSize').value = '10';
-        visualizer.gridSize = 10;
-        visualizer.resetGrids();
-        
-        // Set placement mode to start
-        visualizer.setPlacementMode('start');
-        document.getElementById('placeStart').classList.add('selected');
-    }, 100);
+    new PathfindingVisualizer();
 }); 

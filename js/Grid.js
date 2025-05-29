@@ -6,7 +6,7 @@ class Grid {
         this.startNode = null;
         this.endNode = null;
         this.isMouseDown = false;
-        this.placementMode = 'start'; // Default mode
+        this.placementMode = 'wall'; // Default mode
         this.draggedNode = null;
 
         this.initializeGrid();
@@ -49,46 +49,50 @@ class Grid {
             const col = parseInt(e.target.dataset.col);
             const node = this.grid[row][col];
             
-            if (!node) return;
-
-            if (this.placementMode === 'start') {
-                if (node.isStart) {
-                    this.draggedNode = { type: 'start', node };
-                } else if (!node.isEnd) {
-                    this.setStartNode(node);
-                }
-            } else if (this.placementMode === 'end') {
-                if (node.isEnd) {
-                    this.draggedNode = { type: 'end', node };
-                } else if (!node.isStart) {
-                    this.setEndNode(node);
-                }
-            } else if (this.placementMode === 'wall') {
-                this.toggleWall(node);
+            if (this.placementMode === 'start' && node.isStart) {
+                this.draggedNode = { type: 'start', node };
+            } else if (this.placementMode === 'end' && node.isEnd) {
+                this.draggedNode = { type: 'end', node };
+            } else {
+                this.handleCellClick(e.target);
             }
         });
 
+        // Responsive dragging: update node position on every mousemove
+        this.container.addEventListener('mousemove', (e) => {
+            if (!this.draggedNode) return;
+            const target = document.elementFromPoint(e.clientX, e.clientY);
+            if (!target || !target.classList.contains('grid-cell')) return;
+            const row = parseInt(target.dataset.row);
+            const col = parseInt(target.dataset.col);
+            const targetNode = this.grid[row][col];
+            // Only allow moving to non-wall cells
+            if (!targetNode.isWall) {
+                if (this.draggedNode.type === 'start') {
+                    this.setStartNode(targetNode);
+                } else if (this.draggedNode.type === 'end') {
+                    this.setEndNode(targetNode);
+                }
+            }
+        });
+
+        // Keep mouseover as fallback for keyboard navigation or edge cases
         this.container.addEventListener('mouseover', (e) => {
             if (!e.target.classList.contains('grid-cell')) return;
-            const row = parseInt(e.target.dataset.row);
-            const col = parseInt(e.target.dataset.col);
-            const targetNode = this.grid[row][col];
-            if (!targetNode) return;
-
             if (this.draggedNode) {
-                if (this.draggedNode.type === 'start' && !targetNode.isEnd) {
-                    this.setStartNode(targetNode);
-                } else if (this.draggedNode.type === 'end' && !targetNode.isStart) {
-                    this.setEndNode(targetNode);
+                const row = parseInt(e.target.dataset.row);
+                const col = parseInt(e.target.dataset.col);
+                const targetNode = this.grid[row][col];
+                // Only allow moving to non-wall cells
+                if (!targetNode.isWall) {
+                    if (this.draggedNode.type === 'start') {
+                        this.setStartNode(targetNode);
+                    } else if (this.draggedNode.type === 'end') {
+                        this.setEndNode(targetNode);
+                    }
                 }
             } else if (this.isMouseDown) {
-                if (this.placementMode === 'wall') {
-                    this.toggleWall(targetNode);
-                } else if (this.placementMode === 'start' && !targetNode.isEnd) {
-                    this.setStartNode(targetNode);
-                } else if (this.placementMode === 'end' && !targetNode.isStart) {
-                    this.setEndNode(targetNode);
-                }
+                this.handleCellClick(e.target);
             }
         });
 
@@ -102,8 +106,43 @@ class Grid {
         this.placementMode = mode;
     }
 
+    handleCellClick(cell) {
+        const row = parseInt(cell.dataset.row);
+        const col = parseInt(cell.dataset.col);
+        const node = this.grid[row][col];
+
+        // Only allow wall placement and erasing through clicking
+        if (this.placementMode === 'wall' || this.placementMode === 'erase') {
+            switch (this.placementMode) {
+                case 'wall':
+                    // Don't allow walls on start or end nodes
+                    if (!node.isStart && !node.isEnd) {
+                        this.toggleWall(node);
+                    }
+                    break;
+                case 'erase':
+                    // Don't allow erasing start or end nodes
+                    if (!node.isStart && !node.isEnd) {
+                        this.eraseNode(node);
+                    }
+                    break;
+            }
+        } else if (this.placementMode === 'start') {
+            // Only allow dragging the start node
+            if (node.isStart) {
+                this.draggedNode = { type: 'start', node };
+            }
+        } else if (this.placementMode === 'end') {
+            // Only allow dragging the end node
+            if (node.isEnd) {
+                this.draggedNode = { type: 'end', node };
+            }
+        }
+    }
+
     setStartNode(node) {
-        if (!node || node.isEnd) return;
+        // Don't allow setting start node on top of end node
+        if (node.isEnd) return;
         
         if (this.startNode) {
             const oldStartCell = this.getCellElement(this.startNode);
@@ -119,7 +158,8 @@ class Grid {
     }
 
     setEndNode(node) {
-        if (!node || node.isStart) return;
+        // Don't allow setting end node on top of start node
+        if (node.isStart) return;
         
         if (this.endNode) {
             const oldEndCell = this.getCellElement(this.endNode);
@@ -134,8 +174,37 @@ class Grid {
         cell.classList.add('end');
     }
 
+    toggleWall(node) {
+        if (node.isStart || node.isEnd) return;
+        
+        node.isWall = !node.isWall;
+        const cell = this.getCellElement(node);
+        
+        const existingClasses = Array.from(cell.classList).filter(cls => 
+            cls !== 'wall' && cls !== 'grid-cell'
+        );
+        
+        cell.className = 'grid-cell';
+        existingClasses.forEach(cls => cell.classList.add(cls));
+        
+        if (node.isWall) {
+            cell.classList.add('wall');
+        }
+    }
+
+    eraseNode(node) {
+        // Do not erase start or end nodes
+        if (node.isStart || node.isEnd) {
+            return;
+        }
+        node.isWall = false;
+        node.isStart = false;
+        node.isEnd = false;
+        const cell = this.getCellElement(node);
+        cell.className = 'grid-cell';
+    }
+
     getCellElement(node) {
-        if (!node) return null;
         return this.container.querySelector(`[data-row="${node.row}"][data-col="${node.col}"]`);
     }
 
@@ -149,6 +218,32 @@ class Grid {
                 node.reset();
                 const cell = this.getCellElement(node);
                 cell.className = 'grid-cell';
+            }
+        }
+    }
+
+    clearWalls() {
+        for (let row = 0; row < this.size; row++) {
+            for (let col = 0; col < this.size; col++) {
+                const node = this.grid[row][col];
+                if (node.isWall) {
+                    node.isWall = false;
+                    const cell = this.getCellElement(node);
+                    cell.classList.remove('wall');
+                }
+            }
+        }
+    }
+
+    clearWallsOnly() {
+        for (let row = 0; row < this.size; row++) {
+            for (let col = 0; col < this.size; col++) {
+                const node = this.grid[row][col];
+                if (node.isWall) {
+                    node.isWall = false;
+                    const cell = this.getCellElement(node);
+                    cell.classList.remove('wall');
+                }
             }
         }
     }
@@ -177,37 +272,14 @@ class Grid {
         }, ANIMATION_DURATION);
     }
 
-    toggleWall(node) {
-        // Don't allow walls on start or end nodes
-        if (!node || node.isStart || node.isEnd) return;
-        
-        node.isWall = !node.isWall;
-        const cell = this.getCellElement(node);
-        if (!cell) return;
-        
-        if (node.isWall) {
-            cell.classList.add('wall');
-        } else {
-            cell.classList.remove('wall');
-        }
-    }
-
-    clearWalls() {
-        for (let row = 0; row < this.size; row++) {
-            for (let col = 0; col < this.size; col++) {
-                const node = this.grid[row][col];
-                if (node.isWall) {
-                    node.isWall = false;
-                    const cell = this.getCellElement(node);
-                    cell.classList.remove('wall');
-                }
-            }
-        }
-    }
-
     syncNodeState(row, col, nodeState) {
         const node = this.grid[row][col];
         const cell = this.getCellElement(node);
+
+        node.isWall = false;
+        node.isStart = false;
+        node.isEnd = false;
+        cell.className = 'grid-cell';
 
         if (nodeState.isStart) {
             this.setStartNode(node);
@@ -216,9 +288,33 @@ class Grid {
         } else if (nodeState.isWall) {
             node.isWall = true;
             cell.classList.add('wall');
-        } else {
-            node.isWall = false;
-            cell.classList.remove('wall');
+        }
+    }
+
+    setRandomWalls(density = 0.25, seed = null) {
+        // Seeded random generator for reproducibility
+        let random = Math.random;
+        if (seed !== null) {
+            let s = seed;
+            random = function() {
+                // Simple LCG for reproducible randomness
+                s = Math.imul(48271, s) | 0 % 2147483647;
+                return ((s & 2147483647) / 2147483647);
+            };
+        }
+        for (let row = 0; row < this.size; row++) {
+            for (let col = 0; col < this.size; col++) {
+                const node = this.grid[row][col];
+                if (!node.isStart && !node.isEnd) {
+                    node.isWall = random() < density;
+                    const cell = this.getCellElement(node);
+                    if (node.isWall) {
+                        cell.classList.add('wall');
+                    } else {
+                        cell.classList.remove('wall');
+                    }
+                }
+            }
         }
     }
 }
