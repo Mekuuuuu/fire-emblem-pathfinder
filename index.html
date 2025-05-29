@@ -1,0 +1,123 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Fire Emblem Pathfinder</title>
+    <link href="https://fonts.googleapis.com/css2?family=Cinzel:wght@400;700&display=swap" rel="stylesheet">
+    <link rel="stylesheet" href="styles.css">
+</head>
+<body>
+    <div class="container">
+        <!-- Sidebar -->
+        <div class="controls">
+            <div class="logo-container">
+                <img src="images/fire-emblem-pathfinder.png" alt="Fire Emblem Pathfinder Logo" style="max-width: 100%; height: auto; display: block;" />
+            </div>
+            
+            <div class="control-section">
+                <h3>Grid Settings</h3>
+                <div class="control-group">
+                    <label for="gridSize">Grid Size:</label>
+                    <select id="gridSize">
+                        <option value="10">10x10</option>
+                        <option value="15">15x15</option>
+                        <option value="20">20x20</option>
+                    </select>
+                </div>
+                <div class="control-group">
+                    <label for="speed">Speed:</label>
+                    <select id="speed">
+                        <option value="slow">Slow</option>
+                        <option value="medium" selected>Medium</option>
+                        <option value="fast">Fast</option>
+                    </select>
+                </div>
+                <button id="randomWalls" class="action-btn" style="margin: 0.5rem auto 0 auto; width: 100%;">Random Walls</button>
+            </div>
+
+            <div class="control-section">
+                <h3>Placement Mode</h3>
+                <div class="button-group">
+                    <button id="placeStart" class="tactical-btn">
+                        <span class="btn-icon">⚔️</span>
+                        Place Start
+                    </button>
+                    <button id="placeEnd" class="tactical-btn">
+                        <span class="btn-icon">🎯</span>
+                        Place End
+                    </button>
+                    <button id="placeWall" class="tactical-btn">
+                        <span class="btn-icon">🏰</span>
+                        Place Wall
+                    </button>
+                    <button id="erase" class="tactical-btn">
+                        <span class="btn-icon">🗑️</span>
+                        Erase
+                    </button>
+                </div>
+            </div>
+
+            <div class="control-section">
+                <h3>Actions</h3>
+                <div class="button-group">
+                    <button id="findPath" class="action-btn">
+                        <span class="btn-icon">⚡</span><br>
+                        Find Path
+                    </button>
+                    <button id="clearGrid" class="action-btn">
+                        <span class="btn-icon">🔄</span>
+                        Clear Grid
+                    </button>
+                </div>
+            </div>
+
+            <div class="control-section">
+                <h3>Legend</h3>
+                <div class="legend">
+                    <div class="legend-item">
+                        <div class="legend-color start"></div>
+                        <span>Start</span>
+                    </div>
+                    <div class="legend-item">
+                        <div class="legend-color end"></div>
+                        <span>End</span>
+                    </div>
+                    <div class="legend-item">
+                        <div class="legend-color wall"></div>
+                        <span>Wall</span>
+                    </div>
+                    <div class="legend-item">
+                        <div class="legend-color visited"></div>
+                        <span>Visited</span>
+                    </div>
+                    <div class="legend-item">
+                        <div class="legend-color path"></div>
+                        <span>Path</span>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <!-- Main Content -->
+        <div class="main-content">
+            <div class="grids-container">
+                <div class="grid-section">
+                    <h2>Dijkstra's Path</h2>
+                    <div id="dijkstraGrid" class="grid-container"></div>
+                </div>
+                <div class="grid-section">
+                    <h2>A* Path</h2>
+                    <div id="astarGrid" class="grid-container"></div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <script src="js/Node.js"></script>
+    <script src="js/Grid.js"></script>
+    <script src="js/Dijkstra.js"></script>
+    <script src="js/AStar.js"></script>
+    <script src="js/main.js"></script>
+</body>
+</html> 
