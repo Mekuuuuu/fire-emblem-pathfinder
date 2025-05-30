@@ -13,6 +13,7 @@ class PathfindingVisualizer {
         this.astar = new AStar(this.astarGrid);
 
         this.setupEventListeners();
+        this.setPlacementMode('start'); // Set default placement mode to 'start'
     }
 
     setupEventListeners() {
@@ -57,6 +58,13 @@ class PathfindingVisualizer {
 
         // Clear grid button
         document.getElementById('clearGrid').addEventListener('click', () => {
+            if (this.isRunning) {
+                this.dijkstra.cancelRequested = true;
+                this.astar.cancelRequested = true;
+                this.isRunning = false;
+            }
+            this.dijkstraGrid.clearPath();
+            this.astarGrid.clearPath();
             this.dijkstraGrid.clearWallsOnly();
             this.astarGrid.clearWallsOnly();
         });
@@ -213,6 +221,7 @@ class PathfindingVisualizer {
     }
 
     resetGrids() {
+        const currentMode = this.dijkstraGrid.placementMode; // Store current placement mode
         // Clear existing grids
         this.dijkstraGrid.container.innerHTML = '';
         this.astarGrid.container.innerHTML = '';
@@ -225,8 +234,7 @@ class PathfindingVisualizer {
         this.dijkstra = new Dijkstra(this.dijkstraGrid);
         this.astar = new AStar(this.astarGrid);
 
-        // Reattach event listeners
-        // this.setupEventListeners();
+        this.setPlacementMode(currentMode); // Restore the previous placement mode
     }
 }
 
