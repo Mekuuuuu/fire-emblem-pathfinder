@@ -6,7 +6,7 @@ class Grid {
         this.startNode = null;
         this.endNode = null;
         this.isMouseDown = false;
-        this.placementMode = 'wall'; // Default mode
+        this.placementMode = 'start'; // Default mode
         this.draggedNode = null;
 
         this.initializeGrid();
@@ -54,7 +54,7 @@ class Grid {
             } else if (this.placementMode === 'end' && node.isEnd) {
                 this.draggedNode = { type: 'end', node };
             } else {
-                this.handleCellClick(e.target);
+                // this.handleCellClick(e.target);
             }
         });
 
@@ -92,7 +92,7 @@ class Grid {
                     }
                 }
             } else if (this.isMouseDown) {
-                this.handleCellClick(e.target);
+                // this.handleCellClick(e.target);
             }
         });
 
@@ -106,39 +106,29 @@ class Grid {
         this.placementMode = mode;
     }
 
-    handleCellClick(cell) {
-        const row = parseInt(cell.dataset.row);
-        const col = parseInt(cell.dataset.col);
-        const node = this.grid[row][col];
-
-        // Only allow wall placement and erasing through clicking
-        if (this.placementMode === 'wall' || this.placementMode === 'erase') {
-            switch (this.placementMode) {
-                case 'wall':
-                    // Don't allow walls on start or end nodes
-                    if (!node.isStart && !node.isEnd) {
-                        this.toggleWall(node);
-                    }
-                    break;
-                case 'erase':
-                    // Don't allow erasing start or end nodes
-                    if (!node.isStart && !node.isEnd) {
-                        this.eraseNode(node);
-                    }
-                    break;
-            }
-        } else if (this.placementMode === 'start') {
-            // Only allow dragging the start node
-            if (node.isStart) {
-                this.draggedNode = { type: 'start', node };
-            }
-        } else if (this.placementMode === 'end') {
-            // Only allow dragging the end node
-            if (node.isEnd) {
-                this.draggedNode = { type: 'end', node };
-            }
-        }
-    }
+    // handleCellClick(e) {
+    //     if (!e || !e.target || !e.target.classList || !e.target.classList.contains('grid-cell')) return;
+    //     const row = parseInt(e.target.dataset.row);
+    //     const col = parseInt(e.target.dataset.col);
+    //     const node = this.grid[row][col];
+    //     if (!node) return; // Check if node exists
+    //     switch (this.placementMode) {
+    //         case 'start':
+    //             this.setStartNode(node);
+    //             break;
+    //         case 'end':
+    //             this.setEndNode(node);
+    //             break;
+    //         case 'wall':
+    //             if (!node.isWall) { // Only toggle if not already a wall
+    //                 this.toggleWall(node);
+    //             }
+    //             break;
+    //         case 'erase':
+    //             this.eraseNode(node);
+    //             break;
+    //     }
+    // }
 
     setStartNode(node) {
         // Don't allow setting start node on top of end node
@@ -176,6 +166,7 @@ class Grid {
 
     toggleWall(node) {
         if (node.isStart || node.isEnd) return;
+        console.log("Placing a wall at ", node.row, node.col);
         
         node.isWall = !node.isWall;
         const cell = this.getCellElement(node);
@@ -198,8 +189,7 @@ class Grid {
             return;
         }
         node.isWall = false;
-        node.isStart = false;
-        node.isEnd = false;
+
         const cell = this.getCellElement(node);
         cell.className = 'grid-cell';
     }
@@ -209,8 +199,8 @@ class Grid {
     }
 
     reset() {
-        this.startNode = null;
-        this.endNode = null;
+        // this.startNode = null;
+        // this.endNode = null;
         
         for (let row = 0; row < this.size; row++) {
             for (let col = 0; col < this.size; col++) {

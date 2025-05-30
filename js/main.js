@@ -226,7 +226,7 @@ class PathfindingVisualizer {
         this.astar = new AStar(this.astarGrid);
 
         // Reattach event listeners
-        this.setupEventListeners();
+        // this.setupEventListeners();
     }
 }
 
